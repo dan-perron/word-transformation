@@ -11,7 +11,6 @@ import math
 valid_letters = list(string.ascii_lowercase)
 def find_transformations(word):
   transformations = set()
-#  original_word = list(word)
   for x in range(0, len(word)):
     for y in range(0, len(valid_letters)):
       # new_word is a poor name here... it's probably not an actual word
@@ -75,6 +74,7 @@ def find_path(start, finish, dictionary):
     # clear the work queue
     queued_word_objs = list()
 
+    print len(dictionary)
     for process in range(0, queue_length, chunk_size):
       ret_val = process_returns.get()
       if ret_val[0]:
@@ -82,7 +82,8 @@ def find_path(start, finish, dictionary):
         return ret_val[1]
       else:
         queued_word_objs.extend(ret_val[1])
-        queued_words.intersection_update(ret_val[2])
+        queued_words.update(ret_val[2])
+        print len(queued_words)
 
 def timed_find_path(start, finish, dictionary):
   start_time = time.time()
