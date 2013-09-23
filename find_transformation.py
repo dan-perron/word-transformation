@@ -29,7 +29,7 @@ def import_file():
   return words
 
 def search_word_set(word_objs, finish, dictionary, already_visited_words,
-                    ret_val):
+                    return_value):
   queued_words = set()
   queued_word_objs = list()
   for word_obj in word_objs:
@@ -39,7 +39,7 @@ def search_word_set(word_objs, finish, dictionary, already_visited_words,
         path = list(word_obj[1])
         path.append(word_obj[0])
         path.append(transformation)
-        ret_val.put((True, path))
+        return_value.put((True, path))
         return
       if (transformation in dictionary and 
           transformation not in already_visited_words and
@@ -48,40 +48,50 @@ def search_word_set(word_objs, finish, dictionary, already_visited_words,
         path = list(word_obj[1])
         path.append(word_obj[0])
         queued_word_objs.append((transformation, path))
-  ret_val.put((False, queued_word_objs, queued_words))
+  return_value.put((False, queued_word_objs, queued_words))
 
 def find_path(start, finish, dictionary):
-#  word_queue = deque([(start, list())])
+  if start == finish:
+    return list([start])
   queued_word_objs = list(([start, list()],))
   queued_words = set(start)
   # make this a global var, or something
   num_processes = 4.0
+  return_value = None
   while 1:
     queue_length = len(queued_word_objs)
     if queue_length == 0:
       # return an empty list if we couldn't find a path
       return list()
     process_returns = Queue()
-    processes = list()
     chunk_size = int(math.ceil(queue_length/num_processes))
     for chunk_start in range(0, queue_length, chunk_size):
+      # todo: investigate using pipes so we can keep the processes alive
+      # rather than having to create them for each block of work
       p = Process(target=search_word_set, 
                   args=(queued_word_objs[chunk_start:chunk_start + chunk_size],
                         finish, dictionary, queued_words, process_returns))
       p.start()
-      processes.append(p)
 
     # clear the work queue
     queued_word_objs = list()
 
+    # process_returns doesn't know how much data it should receive back, so
+    # just iterate over the same number of chunks as we assigned work for
+    # (may be less than num_processes if there wasn't enough work for all
+    # processes)
     for process in range(0, queue_length, chunk_size):
-      ret_val = process_returns.get()
-      if ret_val[0]:
-        # done!
-        return ret_val[1]
-      else:
-        queued_word_objs.extend(ret_val[1])
-        queued_words.update(ret_val[2])
+      child_return_value = process_returns.get()
+      if child_return_value[0]:
+        # done, but we need to empty the queue otherwise the child processes
+        # won't exit properly
+        return_value = child_return_value[1]
+      elif return_value is None:
+        queued_word_objs.extend(child_return_value[1])
+        queued_words.update(child_return_value[2])
+    
+    if return_value is not None:
+      return return_value
 
 def timed_find_path(start, finish, dictionary):
   start_time = time.time()
@@ -96,10 +106,11 @@ def main():
   while 1:
     word_one = raw_input('Please enter the first word: ')
     word_two = raw_input('Please enter the second word: ')
+    # todo: accept some input to break out of the loop
     path = timed_find_path(word_one, word_two, valid_words)
     if len(path) == 0:
-      print ('could not find a series of transformations between word_one '
-             'and word_two')
+      print ('could not find a series of transformations between {} and {}'
+             ).format(word_one, word_two)
     else:
       print 'found a series of transformations:'
       for word in path:
