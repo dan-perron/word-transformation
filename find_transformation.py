@@ -104,8 +104,8 @@ def main():
   # Consider computing the graph of transformations that exist in the set of
   # valid_words.
   while 1:
-    word_one = raw_input('Please enter the first word: ')
-    word_two = raw_input('Please enter the second word: ')
+    word_one = raw_input('Please enter the first word: ').lower()
+    word_two = raw_input('Please enter the second word: ').lower()
     # todo: accept some input to break out of the loop
     path = timed_find_path(word_one, word_two, valid_words)
     if len(path) == 0:
