@@ -74,7 +74,6 @@ def find_path(start, finish, dictionary):
     # clear the work queue
     queued_word_objs = list()
 
-    print len(dictionary)
     for process in range(0, queue_length, chunk_size):
       ret_val = process_returns.get()
       if ret_val[0]:
@@ -83,7 +82,6 @@ def find_path(start, finish, dictionary):
       else:
         queued_word_objs.extend(ret_val[1])
         queued_words.update(ret_val[2])
-        print len(queued_words)
 
 def timed_find_path(start, finish, dictionary):
   start_time = time.time()
